@@ -1,1 +1,1 @@
-require "rsense"
+require "rsense/server"

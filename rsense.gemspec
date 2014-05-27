@@ -1,15 +1,15 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'rsense/version'
+require 'rsense/server/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "rsense"
-  spec.version       = Rsense::VERSION
+  spec.name          = "rsense-server"
+  spec.version       = Rsense::Server::VERSION
   spec.authors       = ["Eric West", "Tomohiro Matsuyama"]
   spec.email         = ["esw9999@gmail.com", "tomo@cx4a.org"]
   spec.summary       = %q{RSense knows your code.}
-  spec.description   = %q{RSense is a tool for doing static analysis of Ruby source code. Rsense is used in conjunction with an editor plugin.}
+  spec.description   = %q{rsense-server is the communications bridge between the user (or editor plugins the user is using) and the rsense library written in java.}
   spec.homepage      = ""
   spec.license       = "GPL"
 
@@ -22,7 +22,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "spoon", "~> 0.0.4"
   spec.add_dependency "jruby-jars", "~> 1.7.4"
   spec.add_dependency "jruby-parser", "~> 0.5.4"
-  spec.add_dependency "thor", "~> 0.18.1"
   spec.add_dependency "filetree", "~> 1.0.0"
   spec.add_dependency "bundler", "~> 1.6"
 
