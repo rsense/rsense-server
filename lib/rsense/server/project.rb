@@ -1,7 +1,7 @@
 module Rsense
   module Server
     class Project
-      attr_accessor :name, :path, :graph, :runtime, :loadPath, :gemPath, :loaded
+      attr_accessor :name, :path, :graph, :runtime, :load_path, :gem_path, :loaded
 
       def initialize(name, path)
         @name = name

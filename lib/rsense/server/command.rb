@@ -35,8 +35,8 @@ module Rsense
         @context.clear()
         @projects = {}
         @sandbox = Rsense::Server::Project.new("(sandbox)", Pathname.new("."))
-        @sandbox.loadPath = @options.getLoadPath
-        @sandbox.gemPath = @options.getGemPath
+        @sandbox.load_path = @options.load_path
+        @sandbox.gem_path = @options.gem_path
         @definitionFinder = Rsense::Server::Listeners::FindDefinitionEventListener.new(@context)
         @whereListener = Rsense::Server::Listeners::WhereEventListener.new(@context)
         open_project(@sandbox)
