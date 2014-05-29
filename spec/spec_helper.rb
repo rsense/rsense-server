@@ -2,6 +2,9 @@ require "minitest/autorun"
 require "minitest/reporters"
 Minitest::Reporters.use!
 
+require "rsense-core"
+
+require_relative "../lib/rsense/server/command.rb"
 require_relative "../lib/rsense/server/gem_path.rb"
 require_relative "../lib/rsense/server/load_path.rb"
 require_relative "../lib/rsense/server/options.rb"

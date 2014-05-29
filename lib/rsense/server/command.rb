@@ -13,35 +13,38 @@ module Rsense
         @loadPathLevel = 0
       end
     }
-
-    class Command
+    module Command
       TYPE_INFERENCE_METHOD_NAME = Rsense::CodeAssist::TYPE_INFERENCE_METHOD_NAME
       FIND_DEFINITION_METHOD_NAME_PREFIX = Rsense::CodeAssist::FIND_DEFINITION_METHOD_NAME_PREFIX
       PROJECT_CONFIG_NAME = ".rsense"
-      attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener
-
-      def initialize(options)
-        @context = Context.new
-        @options = options
-        clear()
-      end
-
-      def open_project(project)
-        @projects[project.name] = project
-      end
-
-      def clear
-        @parser = Rsense::Server::Parser.new
-        @context.clear()
-        @projects = {}
-        @sandbox = Rsense::Server::Project.new("(sandbox)", Pathname.new("."))
-        @sandbox.load_path = @options.load_path
-        @sandbox.gem_path = @options.gem_path
-        @definitionFinder = Rsense::Server::Listeners::FindDefinitionEventListener.new(@context)
-        @whereListener = Rsense::Server::Listeners::WhereEventListener.new(@context)
-        open_project(@sandbox)
-      end
-
     end
   end
+end
+
+class Rsense::Server::Command::Command
+
+  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener
+
+  def initialize(options)
+    @context = Context.new
+    @options = options
+    clear()
+  end
+
+  def open_project(project)
+    @projects[project.name] = project
+  end
+
+  def clear
+    @parser = Rsense::Server::Parser.new
+    @context.clear()
+    @projects = {}
+    @sandbox = Rsense::Server::Project.new("(sandbox)", Pathname.new("."))
+    @sandbox.load_path = @options.load_path
+    @sandbox.gem_path = @options.gem_path
+    @definitionFinder = Rsense::Server::Listeners::FindDefinitionEventListener.new(@context)
+    @whereListener = Rsense::Server::Listeners::WhereEventListener.new(@context)
+    open_project(@sandbox)
+  end
+
 end

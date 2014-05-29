@@ -5,7 +5,7 @@ require "json"
 module Rsense
   module Server
     class Options
-      attr_accessor :load_path, :gem_path, :rest, :command, :location, :log, :log_level, :debug, :project, :dependencies, :name, :prefix, :config, :code, :file
+      attr_accessor :rest, :command, :location, :log, :log_level, :debug, :project_path, :name, :prefix, :config, :code, :file
 
       def initialize(opts)
         @rest = []
@@ -21,6 +21,14 @@ module Rsense
             @rest.push(v)
           end
         end
+      end
+
+      def project=(path)
+        @project_path = Pathname.new(path).expand_path
+      end
+
+      def file=(path)
+        @file = Pathname.new(path).expand_path
       end
 
       def here_doc_reader(reader)
@@ -49,27 +57,6 @@ module Rsense
         else
           0
         end
-      end
-
-      def load_path
-        @load_path = @load_path || Rsense::Server::LoadPath.paths
-      end
-
-      def gem_path
-        @gem_path = @gem_path || Rsense::Server::GemPath.paths
-      end
-
-      def dependencies
-        return @dependencies if @dependencies
-        if @project
-          Rsense::Server::LoadPath.dependencies(@project)
-        else
-          nil
-        end
-      end
-
-      def project=(path)
-        @project = Pathname.new(path).expand_path
       end
 
       def inherit(parent)

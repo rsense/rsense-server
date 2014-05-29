@@ -8,7 +8,7 @@ module Rsense
 
       module_function
       def paths
-        fetch.map { |p| p unless p =~ /^file:/ }
+        fetch.map { |p| p unless p.to_s =~ /^file:/ }
       end
 
       def fetch
@@ -41,7 +41,7 @@ module Rsense
       end
 
       def find_gemfile(project)
-        pth = Pathname.new(project.path()).expand_path
+        pth = Pathname.new(project).expand_path
         Dir.glob(pth.join("**/Gemfile.lock")).first
       end
 

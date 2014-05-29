@@ -23,7 +23,7 @@ describe Rsense::Server::LoadPath do
     end
 
     it "checks for a Gemfile.lock" do
-      Rsense::Server::LoadPath.find_gemfile(@project).to_s.must_match(/Gemfile/)
+      Rsense::Server::LoadPath.find_gemfile(@project.path).to_s.must_match(/Gemfile/)
     end
 
     it "checks paths for correct version" do

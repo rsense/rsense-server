@@ -2,8 +2,8 @@ module Rsense
   module Server
     class Code
       attr_accessor :lines
-      TYPE_INFERENCE_METHOD_NAME = "__rsense_type_inference__"
-      FIND_DEFINITION_METHOD_NAME_PREFIX = "__rsense_find_definition__"
+      TYPE_INFERENCE_METHOD_NAME = Rsense::Server::Command::TYPE_INFERENCE_METHOD_NAME
+      FIND_DEFINITION_METHOD_NAME_PREFIX = Rsense::Server::Command::FIND_DEFINITION_METHOD_NAME_PREFIX
 
       def initialize(code_str)
         @lines = code_str.split("\n")

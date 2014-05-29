@@ -14,8 +14,8 @@ describe Rsense::Server::Options do
   end
 
   it "has a project path" do
-    @options.project.to_s.must_match(/code/)
-    @options.project.class.must_equal(Pathname)
+    @options.project_path.to_s.must_match(/code/)
+    @options.project_path.class.must_equal(Pathname)
   end
 
   it "has code" do
