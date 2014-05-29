@@ -8,8 +8,8 @@ module Rsense
         @path = path
         @graph = Rsense::Typing::Graph.new
         @runtime = @graph.getRuntime()
-        @loadPath = Rsense::Server::LoadPath.paths
-        @gemPath = Rsense::Server::GemPath.paths
+        @load_path = Rsense::Server::LoadPath.paths
+        @gem_path = Rsense::Server::GemPath.paths
         @loaded = {}
         @dependencies = Rsense::Server::LoadPath.dependencies(@path)
       end
