@@ -30,7 +30,7 @@ module Rsense
       end
 
       def generate_struct(name, version)
-        paths = check_version(Gem.find_files(name), version)
+        paths = check_version(find_paths(name), version)
         Dependency.new(name, "#{name}-#{version.to_s}", paths)
       end
 
@@ -40,9 +40,21 @@ module Rsense
         end
       end
 
+      def find_paths(name)
+        paths = Gem.find_files(name)
+        return paths unless paths.empty? && name.length > 1
+        find_paths(name.chop)
+      end
+
       def find_gemfile(project)
         pth = Pathname.new(project).expand_path
-        Dir.glob(pth.join("**/Gemfile.lock")).first
+        lockfile = Dir.glob(pth.join("**/Gemfile.lock")).first
+        unless lockfile
+          unless pth.parent == pth
+            lockfile = find_gemfile(pth.parent)
+          end
+        end
+        lockfile
       end
 
     end
