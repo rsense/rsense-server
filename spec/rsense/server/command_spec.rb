@@ -15,7 +15,7 @@ describe Rsense::Server::Command::Command do
 
   describe "finding dependencies" do
     Dependency = Struct.new(:name, :full_name, :path)
-    Project = Struct.new(:load_path, :gem_path)
+    Project = Struct.new(:load_path, :gem_path, :stubs)
 
     before do
       @dependencies = [
@@ -30,7 +30,7 @@ describe Rsense::Server::Command::Command do
         "/fee/fi/fo/fum",
         "/i/smell/the/blood/of/an/englishman"
       ]
-      @project = Project.new(@loadpath, @gempath)
+      @project = Project.new(@loadpath, @gempath, Rsense::BUILTIN)
       @command = Rsense::Server::Command::Command.new(@options)
     end
 
@@ -61,6 +61,11 @@ describe Rsense::Server::Command::Command do
       dep_paths = [Pathname.new("spec/fixtures/deeply"), Pathname.new("foo/bar/baz")]
       matches = @command.deep_check(@gempath, dep_paths, "thing")
       matches.first.must_match(/nested/)
+      matches.size.must_equal(1)
+    end
+
+    it "finds the stubs" do
+      matches = @command.stub_matches(@project, "_builtin")
       matches.size.must_equal(1)
     end
   end

@@ -25,7 +25,7 @@ end
 
 class Rsense::Server::Command::Command
 
-  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result
+  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph
 
   def initialize(options)
     @context = Rsense::Server::Context.new
@@ -63,6 +63,11 @@ class Rsense::Server::Command::Command
     end
     project.loaded[feature] = true
 
+    stubs = stubs_matches(project, feature)
+    stubs.each do |stub|
+      rload(project, Pathname.new(stub), encoding, false)
+    end
+
     lpmatches = load_path_matches(project, feature)
     lpmatches.each do |lp|
       rload(project, lp, encoding, false)
@@ -83,6 +88,10 @@ class Rsense::Server::Command::Command
         rload(project, cp, encoding, false)
       end
     end
+  end
+
+  def stub_matches(project, feature)
+    Dir.glob(project.stubs.join("**/*.rb")).select { |stub| stub.to_s =~ /#{feature}/ }
   end
 
   def dependency_paths(dependencies)
@@ -112,6 +121,17 @@ class Rsense::Server::Command::Command
 
   def open_project(project)
     @projects[project.name] = project
+  end
+
+  def prepare(project)
+    @context.project = project
+    @context.typeSet = Java::org.cx4a.rsense.typing::TypeSet.new
+    @context.main = true
+    @graph = project.graph
+    @graph.addSpecialMethod(TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
+    @graph.addSpecialMethod("require", @require_method)
+    @graph.addSpecialMethod("require_next", @require_next_method)
+    rrequire(project, "_builtin", "UTF-8")
   end
 
   def clear
