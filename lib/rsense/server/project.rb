@@ -15,6 +15,10 @@ module Rsense
         @dependencies = Rsense::Server::LoadPath.dependencies(@path)
       end
 
+      def loaded?(feature)
+        @loaded.include?(feature)
+      end
+
     end
   end
 end

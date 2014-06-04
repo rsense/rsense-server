@@ -57,6 +57,59 @@ class Rsense::Server::Command::Command
     clear()
   end
 
+  def rrequire(project, feature, encoding, loadPathLevel=0)
+    if project.loaded?(feature)
+      Java::org.cx4a.rsense::LoadResult.alreadyLoaded()
+    end
+    project.loaded[feature] = true
+
+    lpmatches = load_path_matches(project, feature)
+    lpmatches.each do |lp|
+      rload(project, lp, encoding, false)
+    end
+
+    dependencies = project.dependencies
+    dpmatches = dependency_matches(dependencies, feature)
+    dpmatches.each do |dp|
+      rload(project, dp, encoding, false)
+    end
+
+    unless lpmatches || dpmatches
+      dep_paths = dependency_paths(dependencies)
+      gem_path = project.gem_path.map {|gp| Pathname.new(gp) }
+
+      checked = deep_check(gem_path, dep_paths, feature)
+      checked.each do |cp|
+        rload(project, cp, encoding, false)
+      end
+    end
+  end
+
+  def dependency_paths(dependencies)
+    dependencies.map { |d| Pathname.new(d.path.first).parent }.flatten
+  end
+
+  def dependency_matches(dependencies, feature)
+    dmatch = dependencies.select { |d| d.name =~ /#{feature}/ }
+    if dmatch
+      dmatch.map { |dm| Pathname.new(dm.path.first) }
+    end
+  end
+
+  def load_path_matches(project, feature)
+    load_path = project.load_path
+    load_path.map do |lp|
+      Dir.glob(Pathname.new(lp).join("**/*#{feature}*"))
+    end.flatten.compact
+  end
+
+  def deep_check(gem_path, dep_paths, feature)
+    checkpaths = gem_path + dep_paths
+    checkpaths.map do |p|
+      Dir.glob(Pathname.new(p).join("**/*#{feature}*"))
+    end.flatten.compact
+  end
+
   def open_project(project)
     @projects[project.name] = project
   end
