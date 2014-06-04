@@ -68,5 +68,9 @@ describe Rsense::Server::Command::Command do
       matches = @command.stub_matches(@project, "_builtin")
       matches.size.must_equal(1)
     end
+
+    it "finds the _builtin" do
+      @command.builtin_path(@project).to_s.must_match(/_builtin/)
+    end
   end
 end

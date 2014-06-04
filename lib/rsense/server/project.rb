@@ -11,7 +11,7 @@ module Rsense
         @stubs = Dir.glob(Rsense::BUILTIN.join("**/*.rb"))
         @load_path = Rsense::Server::LoadPath.paths
         @gem_path = Rsense::Server::GemPath.paths
-        @loaded = {}
+        @loaded = []
         @dependencies = Rsense::Server::LoadPath.dependencies(@path)
       end
 

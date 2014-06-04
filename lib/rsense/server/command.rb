@@ -24,6 +24,8 @@ module Rsense
 end
 
 class Rsense::Server::Command::Command
+  LoadResult = Java::org.cx4a.rsense::LoadResult
+  CompletionCandidate = Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate
 
   attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph
 
@@ -57,11 +59,27 @@ class Rsense::Server::Command::Command
     clear()
   end
 
-  def rrequire(project, feature, encoding, loadPathLevel=0)
-    if project.loaded?(feature)
-      Java::org.cx4a.rsense::LoadResult.alreadyLoaded()
+  def rload(project, file, encoding, prep)
+    return LoadResult.alreadyLoaded() unless project.loaded?(file)
+    project.loaded << file
+    oldmain = @context.main
+
+    if prep
+      prepare(project)
+    else
+      @context.main = false
     end
-    project.loaded[feature] = true
+
+    ast = @parser.parse_string(file.read, file)
+    project.graph.load(ast)
+    result = LoadResult.new
+    result.setAST(ast)
+    result
+  end
+
+  def rrequire(project, feature, encoding, loadPathLevel=0)
+    return LoadResult.alreadyLoaded() unless project.loaded?(feature)
+    project.loaded << feature
 
     stubs = stubs_matches(project, feature)
     stubs.each do |stub|
@@ -88,6 +106,15 @@ class Rsense::Server::Command::Command
         rload(project, cp, encoding, false)
       end
     end
+  end
+
+  def load_builtin(project)
+    builtin = builtin_path(project)
+    rload(project, builtin, "UTF-8", false)
+  end
+
+  def builtin_path(project)
+    Pathname.new(Dir.glob(project.stubs.join('**/_builtin.rb')).last)
   end
 
   def stub_matches(project, feature)
@@ -123,6 +150,45 @@ class Rsense::Server::Command::Command
     @projects[project.name] = project
   end
 
+  def code_completion(project, file, location)
+    prepare(project)
+    code = Rsense::Server::Code.new(Pathname.new(file).read)
+    source = code.inject_inference_marker(location)
+    ast = @parser.parse_string(source, file.to_s)
+    project.graph.load(ast)
+    result = Java::org.cx4a.rsense::CodeCompletionResult.new
+    result.setAST(ast)
+    candidates = []
+    @context.typeSet.each do |receiver|
+      ruby_class = receiver.getMetaClass
+      ruby_class.getMethods(true).each do |name|
+        rmethod = ruby_class.searchMethods(name)
+        candidates << CompletionCandidate.new(name, method.toString(), method.getModule().getMethodPath(null), CompletionCandidate.Kind.METHOD)
+      end
+      if receiver.class == Java::org.cx4a.rsense.ruby::RubyModule
+        module = receiver
+        module.getConstants(true).each do |name|
+          direct_module = module.getConstantModule(name)
+          constant = direct_module.getConstant(name)
+          base_name = direct_module.toString()
+          qname = "#{base_name}::#{name}"
+          kind = kind_check(constant)
+          candidates << CompletionCandidate.new(name, qname, base_name, kind)
+        end
+      end
+    end
+  end
+
+  def kind_check(constant)
+    if constant.class == Java::org.cx4a.rsense.ruby::RubyClass
+      CompletionCandidate::Kind::CLASS
+    elsif constant.class == Java::org.cx4a.rsense.ruby::RubyModule
+      CompletionCandidate::Kind::MODULE
+    else
+      CompletionCandidate::Kind::CONSTANT
+    end
+  end
+
   def prepare(project)
     @context.project = project
     @context.typeSet = Java::org.cx4a.rsense.typing::TypeSet.new
@@ -131,7 +197,7 @@ class Rsense::Server::Command::Command
     @graph.addSpecialMethod(TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
     @graph.addSpecialMethod("require", @require_method)
     @graph.addSpecialMethod("require_next", @require_next_method)
-    rrequire(project, "_builtin", "UTF-8")
+    load_builtin(project)
   end
 
   def clear

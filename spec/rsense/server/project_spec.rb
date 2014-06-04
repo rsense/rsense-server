@@ -11,7 +11,7 @@ describe Rsense::Server::Project do
   end
 
   it "tracks loaded features" do
-    @project.loaded["feature"] = true
+    @project.loaded << "feature"
     @project.loaded?("feature").must_equal(true)
     @project.loaded?("different").must_equal(false)
   end
