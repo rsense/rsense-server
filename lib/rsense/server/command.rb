@@ -3,6 +3,7 @@ require "rsense-core"
 require_relative "./listeners/find_definition_event_listener"
 require_relative "./listeners/where_event_listener"
 require_relative "./command/special_meth"
+require_relative "./command/type_inference_method"
 
 module Rsense
   module Server
@@ -33,13 +34,8 @@ class Rsense::Server::Command::Command
     @context = Rsense::Server::Context.new
     @options = options
 
-    @type_inference_method = Rsense::Server::Command::SpecialMeth.new() do |runtime, receivers, args, blcck, result|
-      receivers.each do |receiver|
-        @context.typeSet.add(receiver)
-      end
-      result.setResultTypeSet(receivers)
-      result.setNeverCallAgain(true)
-    end
+    @type_inference_method = Rsense::Server::Command::TypeInferenceMethod.new()
+    @type_inference_method.context = @context
 
     @require_method = Rsense::Server::Command::SpecialMeth.new() do |runtime, receivers, args, blcck, result|
       if args
@@ -114,11 +110,11 @@ class Rsense::Server::Command::Command
   end
 
   def builtin_path(project)
-    Pathname.new(Dir.glob(project.stubs.join('**/_builtin.rb')).last)
+    Pathname.new(project.stubs.select { |stub| stub.match(/builtin/)}.first)
   end
 
   def stub_matches(project, feature)
-    Dir.glob(project.stubs.join("**/*.rb")).select { |stub| stub.to_s =~ /#{feature}/ }
+    project.stubs.select { |stub| stub.to_s =~ /#{feature}/ }
   end
 
   def dependency_paths(dependencies)
@@ -162,13 +158,13 @@ class Rsense::Server::Command::Command
     @context.typeSet.each do |receiver|
       ruby_class = receiver.getMetaClass
       ruby_class.getMethods(true).each do |name|
-        rmethod = ruby_class.searchMethods(name)
-        candidates << CompletionCandidate.new(name, method.toString(), method.getModule().getMethodPath(null), CompletionCandidate.Kind.METHOD)
+        rmethod = ruby_class.searchMethod(name)
+        candidates << CompletionCandidate.new(name, rmethod.toString(), rmethod.getModule().getMethodPath(nil), CompletionCandidate::Kind::METHOD)
       end
       if receiver.class == Java::org.cx4a.rsense.ruby::RubyModule
-        module = receiver
-        module.getConstants(true).each do |name|
-          direct_module = module.getConstantModule(name)
+        rmodule = receiver
+        rmodule.getConstants(true).each do |name|
+          direct_module = rmodule.getConstantModule(name)
           constant = direct_module.getConstant(name)
           base_name = direct_module.toString()
           qname = "#{base_name}::#{name}"
@@ -177,6 +173,7 @@ class Rsense::Server::Command::Command
         end
       end
     end
+    candidates
   end
 
   def kind_check(constant)
@@ -193,8 +190,9 @@ class Rsense::Server::Command::Command
     @context.project = project
     @context.typeSet = Java::org.cx4a.rsense.typing::TypeSet.new
     @context.main = true
+    @type_inference_method.context = @context
     @graph = project.graph
-    @graph.addSpecialMethod(TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
+    @graph.addSpecialMethod(Rsense::Server::Command::TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
     @graph.addSpecialMethod("require", @require_method)
     @graph.addSpecialMethod("require_next", @require_next_method)
     load_builtin(project)

@@ -30,7 +30,8 @@ describe Rsense::Server::Command::Command do
         "/fee/fi/fo/fum",
         "/i/smell/the/blood/of/an/englishman"
       ]
-      @project = Project.new(@loadpath, @gempath, Rsense::BUILTIN)
+      @stubs = Dir.glob(Rsense::BUILTIN.join("**/*.rb"))
+      @project = Project.new(@loadpath, @gempath, @stubs)
       @command = Rsense::Server::Command::Command.new(@options)
     end
 
@@ -72,5 +73,36 @@ describe Rsense::Server::Command::Command do
     it "finds the _builtin" do
       @command.builtin_path(@project).to_s.must_match(/_builtin/)
     end
+  end
+
+  describe "completions" do
+    require 'json'
+
+    class Testscript
+      attr_accessor :json_path, :json, :options, :command, :name, :file, :project
+
+      def initialize
+        @json_path = Pathname.new("spec/fixtures/test_gem/test.json").expand_path
+        @json = JSON.parse(@json_path.read)
+        @options = Rsense::Server::Options.new(@json)
+        @command = Rsense::Server::Command::Command.new(@options)
+        @name = "sample"
+        @file = @options.project_path
+        @project = Rsense::Server::Project.new(@name, @file)
+      end
+
+      def code_complete
+        @command.code_completion(@project, @options.file, @options.location)
+      end
+    end
+
+    before do
+      @test = Testscript.new
+    end
+
+    it "returns completions" do
+      @test.code_complete.size.must_equal(5)
+    end
+
   end
 end
