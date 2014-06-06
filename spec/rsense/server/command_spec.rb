@@ -101,7 +101,7 @@ describe Rsense::Server::Command::Command do
     end
 
     it "returns completions" do
-      @test.code_complete.size.must_equal(5)
+      @test.code_complete.size.must_equal(51)
     end
 
   end

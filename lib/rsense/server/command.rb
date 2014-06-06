@@ -26,7 +26,12 @@ end
 
 class Rsense::Server::Command::Command
   LoadResult = Java::org.cx4a.rsense::LoadResult
-  CompletionCandidate = Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate
+  CompletionCandidate = Struct.new(
+      :completion,
+      :qualified_name,
+      :base_name,
+      :kind
+    )
 
   attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph
 
@@ -56,7 +61,8 @@ class Rsense::Server::Command::Command
   end
 
   def rload(project, file, encoding, prep)
-    return LoadResult.alreadyLoaded() unless project.loaded?(file)
+    return LoadResult.alreadyLoaded() if project.loaded?(file)
+    return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
     project.loaded << file
     oldmain = @context.main
 
@@ -66,7 +72,7 @@ class Rsense::Server::Command::Command
       @context.main = false
     end
 
-    ast = @parser.parse_string(file.read, file)
+    ast = @parser.parse_string(file.read, file.to_s)
     project.graph.load(ast)
     result = LoadResult.new
     result.setAST(ast)
@@ -155,13 +161,15 @@ class Rsense::Server::Command::Command
     result = Java::org.cx4a.rsense::CodeCompletionResult.new
     result.setAST(ast)
     candidates = []
+    @receivers = []
     @context.typeSet.each do |receiver|
+      @receivers << receiver
       ruby_class = receiver.getMetaClass
       ruby_class.getMethods(true).each do |name|
         rmethod = ruby_class.searchMethod(name)
-        candidates << CompletionCandidate.new(name, rmethod.toString(), rmethod.getModule().getMethodPath(nil), CompletionCandidate::Kind::METHOD)
+        candidates << CompletionCandidate.new(name, rmethod.toString(), rmethod.getModule().getMethodPath(nil), method_kind)
       end
-      if receiver.class == Java::org.cx4a.rsense.ruby::RubyModule
+      if receiver.to_java_object.java_kind_of?(Java::org.cx4a.rsense.ruby::RubyModule)
         rmodule = receiver
         rmodule.getConstants(true).each do |name|
           direct_module = rmodule.getConstantModule(name)
@@ -176,13 +184,17 @@ class Rsense::Server::Command::Command
     candidates
   end
 
+  def method_kind
+    Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate::Kind::METHOD
+  end
+
   def kind_check(constant)
     if constant.class == Java::org.cx4a.rsense.ruby::RubyClass
-      CompletionCandidate::Kind::CLASS
+      Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate::Kind::CLASS
     elsif constant.class == Java::org.cx4a.rsense.ruby::RubyModule
-      CompletionCandidate::Kind::MODULE
+      Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate::Kind::MODULE
     else
-      CompletionCandidate::Kind::CONSTANT
+      Java::org.cx4a.rsense::CodeCompletionResult::CompletionCandidate::Kind::CONSTANT
     end
   end
 
