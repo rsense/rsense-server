@@ -1,14 +1,20 @@
 require "rsense/server"
 
+require "puma"
 require "sinatra"
 require "json"
 
 class RsenseApp < Sinatra::Base
+  configure { set :server, :puma }
 
   get '/hello' do
     content_type :json
-    json = request.body.read
-    data = JSON.parse(json)
+    jsontext = request.body.read
+    if jsontext
+      data = JSON.parse(jsontext)
+    else
+      "No json was sent."
+    end
     { greeting: "Hello World", data: data }.to_json
   end
 end
