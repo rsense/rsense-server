@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
-  spec.require_paths = ["lib", "vendor/torqbox/lib"]
+  spec.require_paths = ["lib", "vendor"]
 
   spec.add_dependency "rsense-core", "~> 0.5.1"
   spec.add_dependency "spoon", "~> 0.0.4"
@@ -25,7 +25,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "filetree", "~> 1.0.0"
   spec.add_dependency "bundler", "~> 1.6"
   spec.add_dependency "sinatra"
-  spec.add_dependency "puma"
 
   spec.add_development_dependency 'guard'
   spec.add_development_dependency 'guard-minitest'

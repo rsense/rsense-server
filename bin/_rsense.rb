@@ -1,11 +1,9 @@
 require "rsense/server"
 
 require "sinatra"
-require "puma"
 require "json"
 
 class RsenseApp < Sinatra::Base
-  configure { set :server, :puma }
 
   get '/hello' do
     content_type :json
