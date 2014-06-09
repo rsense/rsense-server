@@ -92,7 +92,7 @@ describe Rsense::Server::Command::Command do
       end
 
       def code_complete
-        @command.code_completion(@project, @options.file, @options.location)
+        @command.code_completion(@options.file, @options.location)
       end
     end
 

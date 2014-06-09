@@ -152,12 +152,16 @@ class Rsense::Server::Command::Command
     @projects[project.name] = project
   end
 
-  def code_completion(project, file, location)
-    prepare(project)
-    code = Rsense::Server::Code.new(Pathname.new(file).read)
+  def code_completion(file, location, code_str="")
+    if code_str.empty?
+      code = Rsense::Server::Code.new(Pathname.new(file).read)
+    else
+      code = Rsense::Server::Code.new(code_str)
+      puts code
+    end
     source = code.inject_inference_marker(location)
     ast = @parser.parse_string(source, file.to_s)
-    project.graph.load(ast)
+    @project.graph.load(ast)
     result = Java::org.cx4a.rsense::CodeCompletionResult.new
     result.setAST(ast)
     candidates = []
@@ -218,6 +222,18 @@ class Rsense::Server::Command::Command
     @definitionFinder = Rsense::Server::Listeners::FindDefinitionEventListener.new(@context)
     @whereListener = Rsense::Server::Listeners::WhereEventListener.new(@context)
     open_project(@sandbox)
+    prepare_project()
+  end
+
+  def prepare_project()
+    if @options.name
+      name = @roptions.name
+    else
+      name = "(sandbox)"
+    end
+    file = @options.project_path
+    @project = Rsense::Server::Project.new(name, file)
+    prepare(@project)
   end
 
 end

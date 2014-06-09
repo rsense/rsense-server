@@ -8,8 +8,8 @@ module Rsense
       attr_accessor :rest, :command, :location, :log, :log_level, :debug, :project_path, :name, :prefix, :config, :code, :file
 
       def initialize(opts)
-        @rest = []
-        @command = opts["command"]
+        @rest = {}
+        @command = opts["command"] if opts["command"]
         parse_args(opts)
       end
 
@@ -18,7 +18,7 @@ module Rsense
           if respond_to?("#{k}=")
             __send__("#{k}=", v)
           else
-            @rest.push(v)
+            @rest[k] = v
           end
         end
       end
