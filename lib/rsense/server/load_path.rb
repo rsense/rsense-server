@@ -46,15 +46,17 @@ module Rsense
         find_paths(name.chop)
       end
 
-      def find_gemfile(project)
+      def find_gemfile(project, level=0)
+        level = level + 1
         pth = Pathname.new(project).expand_path
-        lockfile = Dir.glob(pth.join("**/Gemfile.lock")).first
-        unless lockfile
-          unless pth.parent == pth
-            lockfile = find_gemfile(pth.parent)
+        lockfile = pth.join("Gemfile.lock")
+        if lockfile.exist?
+          return lockfile
+        else
+          unless level > 6
+            lockfile = find_gemfile(pth.parent, level)
           end
         end
-        lockfile
       end
 
     end

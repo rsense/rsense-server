@@ -14,7 +14,10 @@ module Rsense
         column = location["column"] - 1
         lines = @lines.clone
         line = lines[row]
+        return lines.join("\n") unless line && line.length >= column - 1 && column > 1
         if line.slice(column - 1).end_with?(".")
+          line.insert(column, TYPE_INFERENCE_METHOD_NAME)
+        elsif line.slice(column - 2..column - 1).end_with?("::")
           line.insert(column, TYPE_INFERENCE_METHOD_NAME)
         else
           line.insert(column, ".#{TYPE_INFERENCE_METHOD_NAME}")

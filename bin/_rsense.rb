@@ -82,12 +82,14 @@ class RsenseApp < Sinatra::Base
     else
       candidates = @rcommand.code_completion(@roptions.file, @roptions.location)
     end
+    @rcommand.errors.each { |e| puts e }
     completions = candidates.map do |c|
-      {c.completion => {
+      {
+        name: c.completion,
         qualified_name: c.qualified_name,
         base_name: c.base_name,
         kind: c.kind.to_string
-      }}
+      }
     end
     { :completions => completions }
   end

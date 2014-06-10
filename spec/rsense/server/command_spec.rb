@@ -75,34 +75,4 @@ describe Rsense::Server::Command::Command do
     end
   end
 
-  describe "completions" do
-    require 'json'
-
-    class Testscript
-      attr_accessor :json_path, :json, :options, :command, :name, :file, :project
-
-      def initialize
-        @json_path = Pathname.new("spec/fixtures/test_gem/test.json").expand_path
-        @json = JSON.parse(@json_path.read)
-        @options = Rsense::Server::Options.new(@json)
-        @command = Rsense::Server::Command::Command.new(@options)
-        @name = "sample"
-        @file = @options.project_path
-        @project = Rsense::Server::Project.new(@name, @file)
-      end
-
-      def code_complete
-        @command.code_completion(@options.file, @options.location)
-      end
-    end
-
-    before do
-      @test = Testscript.new
-    end
-
-    it "returns completions" do
-      @test.code_complete.size.must_equal(51)
-    end
-
-  end
 end

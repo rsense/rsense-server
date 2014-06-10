@@ -1,16 +1,18 @@
 require "sample/version"
 
-class Sample
-  attr_accessor :simple
+module Sample
+  class Sample
+    attr_accessor :simple
 
-  def initialize
-    @simple = "simple"
-  end
+    def initialize
+      @simple = "simple"
+    end
 
-  def another
-    "another"
+    def another
+      "another"
+    end
   end
 end
 
-sample = Sample.new
+sample = Sample::Sample.new
 sample

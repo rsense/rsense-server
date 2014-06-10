@@ -10,6 +10,9 @@ module Rsense
         @runtime = @graph.getRuntime()
         @stubs = Dir.glob(Rsense::BUILTIN.join("**/*.rb"))
         @load_path = Rsense::Server::LoadPath.paths
+        unless @path == "."
+          @load_path << Pathname.new(@path)
+        end
         @gem_path = Rsense::Server::GemPath.paths
         @loaded = []
         @dependencies = Rsense::Server::LoadPath.dependencies(@path)

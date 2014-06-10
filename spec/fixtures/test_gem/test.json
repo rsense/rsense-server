@@ -4,7 +4,7 @@
     "file": "spec/fixtures/test_gem/lib/sample.rb",
     "code": "require \"sample/version\"\n\nmodule Sample\n  attr_accessor :simple\n\n  def initialize\n    @simple = \"simple\"\n  end\n\n  def another\n    \"another\"\n  end\nend\n\nsample = Sample.new\nsample\n",
     "location": {
-        "row": 16,
+        "row": 18,
         "column": 7
     }
 }

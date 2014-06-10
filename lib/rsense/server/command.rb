@@ -33,20 +33,21 @@ class Rsense::Server::Command::Command
       :kind
     )
 
-  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph
+  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph, :project, :errors
 
   def initialize(options)
     @context = Rsense::Server::Context.new
+    @context.loadPathLevel = 0
     @options = options
+    @errors = []
 
     @type_inference_method = Rsense::Server::Command::TypeInferenceMethod.new()
-    @type_inference_method.context = @context
 
     @require_method = Rsense::Server::Command::SpecialMeth.new() do |runtime, receivers, args, blcck, result|
       if args
         feature = Java::org.cx4a.rsense.typing.vertex::Vertex.getString(args[0])
         if feature
-          rrequire(@context.project, feature, "UTF-8")
+          rrequire(@context.project, feature, "UTF-8", @context.loadPathLevel + 1)
         end
       end
     end
@@ -61,6 +62,7 @@ class Rsense::Server::Command::Command
   end
 
   def rload(project, file, encoding, prep)
+    file = Pathname.new(file)
     return LoadResult.alreadyLoaded() if project.loaded?(file)
     return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
     project.loaded << file
@@ -72,18 +74,26 @@ class Rsense::Server::Command::Command
       @context.main = false
     end
 
-    ast = @parser.parse_string(file.read, file.to_s)
-    project.graph.load(ast)
-    result = LoadResult.new
-    result.setAST(ast)
-    result
+    begin
+      ast = @parser.parse_string(file.read, file.to_s)
+      project.graph.load(ast)
+      result = LoadResult.new
+      result.setAST(ast)
+      result
+    rescue Java::OrgJrubyparserLexer::SyntaxException => e
+      @errors << e
+    end
   end
 
   def rrequire(project, feature, encoding, loadPathLevel=0)
-    return LoadResult.alreadyLoaded() unless project.loaded?(feature)
-    project.loaded << feature
 
-    stubs = stubs_matches(project, feature)
+    lplevel = @context.loadPathLevel
+    @context.loadPathLevel = loadPathLevel
+    return if lplevel > 1
+    return LoadResult.alreadyLoaded() if project.loaded?(feature)
+
+
+    stubs = stub_matches(project, feature)
     stubs.each do |stub|
       rload(project, Pathname.new(stub), encoding, false)
     end
@@ -93,10 +103,12 @@ class Rsense::Server::Command::Command
       rload(project, lp, encoding, false)
     end
 
-    dependencies = project.dependencies
-    dpmatches = dependency_matches(dependencies, feature)
-    dpmatches.each do |dp|
-      rload(project, dp, encoding, false)
+    unless lpmatches
+      dependencies = project.dependencies
+      dpmatches = dependency_matches(dependencies, feature)
+      dpmatches.each do |dp|
+        rload(project, dp, encoding, false)
+      end
     end
 
     unless lpmatches || dpmatches
@@ -108,6 +120,7 @@ class Rsense::Server::Command::Command
         rload(project, cp, encoding, false)
       end
     end
+    @context.loadPathLevel = lplevel
   end
 
   def load_builtin(project)
@@ -130,15 +143,15 @@ class Rsense::Server::Command::Command
   def dependency_matches(dependencies, feature)
     dmatch = dependencies.select { |d| d.name =~ /#{feature}/ }
     if dmatch
-      dmatch.map { |dm| Pathname.new(dm.path.first) }
+      dmatch.map { |dm| Pathname.new(dm.path.first) unless dm.path.first == nil }.compact
     end
   end
 
   def load_path_matches(project, feature)
     load_path = project.load_path
-    load_path.map do |lp|
+    load_path.compact.map do |lp|
       Dir.glob(Pathname.new(lp).join("**/*#{feature}*"))
-    end.flatten.compact
+    end.flatten.compact.reject {|f| File.directory?(f) }
   end
 
   def deep_check(gem_path, dep_paths, feature)
@@ -157,13 +170,18 @@ class Rsense::Server::Command::Command
       code = Rsense::Server::Code.new(Pathname.new(file).read)
     else
       code = Rsense::Server::Code.new(code_str)
-      puts code
     end
-    source = code.inject_inference_marker(location)
-    ast = @parser.parse_string(source, file.to_s)
-    @project.graph.load(ast)
-    result = Java::org.cx4a.rsense::CodeCompletionResult.new
-    result.setAST(ast)
+
+    begin
+      source = code.inject_inference_marker(location)
+      ast = @parser.parse_string(source, file.to_s)
+      @project.graph.load(ast)
+      result = Java::org.cx4a.rsense::CodeCompletionResult.new
+      result.setAST(ast)
+    rescue Java::OrgJrubyparserLexer::SyntaxException => e
+      @errors << e
+    end
+
     candidates = []
     @receivers = []
     @context.typeSet.each do |receiver|
