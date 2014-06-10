@@ -1,4 +1,5 @@
 require "pathname"
+require "bundler"
 
 module Rsense
   module Server
@@ -18,8 +19,11 @@ module Rsense
       def dependencies(project)
         @gemfile = find_gemfile(project)
         if @gemfile
+          start_dir = Dir.pwd
+          Dir.chdir(@gemfile.dirname)
           lockfile = Bundler::LockfileParser.new(Bundler.read_file(@gemfile))
           gem_info(lockfile)
+          Dir.chdir(start_dir)
         end
       end
 

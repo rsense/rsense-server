@@ -1,6 +1,5 @@
 require "pathname"
 require "jruby-parser"
-require "bundler/lockfile_parser"
 require "rsense-core"
 require "rsense/server/version"
 
