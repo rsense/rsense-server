@@ -94,16 +94,32 @@ class RsenseApp < Sinatra::Base
     { :completions => completions }
   end
 
+  def add_deps
+    while true
+      unless @serving
+        if @rcommand.placeholders.first
+          proj, feat, encoding = @rcommand.placeholders.shift
+          @rcommand.rrequire(proj, feat, encoding, 0)
+          sleep 1
+        end
+      end
+    end
+  end
+
   post '/' do
+    @serving = true
+    add_deps
     content_type :json
     jsontext = request.body.read
     if jsontext
       data = JSON.parse(jsontext)
       setup(data)
-      __send__(data["command"]).to_json
+      retdata = __send__(data["command"]).to_json
     else
-      "No JSON was sent"
+      retdata = "No JSON was sent"
     end
+    @serving = false
+    retdata
   end
 
 end

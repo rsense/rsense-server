@@ -33,13 +33,14 @@ class Rsense::Server::Command::Command
       :kind
     )
 
-  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph, :project, :errors
+  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph, :project, :errors, :placeholders
 
   def initialize(options)
     @context = Rsense::Server::Context.new
     @context.loadPathLevel = 0
     @options = options
     @errors = []
+    @placeholders = []
 
     @type_inference_method = Rsense::Server::Command::TypeInferenceMethod.new()
 
@@ -89,7 +90,9 @@ class Rsense::Server::Command::Command
 
     lplevel = @context.loadPathLevel
     @context.loadPathLevel = loadPathLevel
-    return if lplevel > 1
+    if lplevel > 1
+      @placeholders << [project, feature, encoding]
+    end
     return LoadResult.alreadyLoaded() if project.loaded?(feature)
 
 
