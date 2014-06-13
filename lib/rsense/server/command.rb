@@ -1,5 +1,4 @@
 require "pathname"
-require "pry"
 require "rsense-core"
 require_relative "./listeners/find_definition_event_listener"
 require_relative "./listeners/where_event_listener"

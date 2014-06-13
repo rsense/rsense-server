@@ -1,5 +1,4 @@
 require "jruby-parser"
-require "pry"
 
 module Rsense
   module Server
@@ -55,5 +54,3 @@ module Rsense
     end
   end
 end
-
-
