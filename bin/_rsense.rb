@@ -1,6 +1,7 @@
 require "rsense/server"
 require "rsense/server/config"
 require "optparse"
+require "awesome_print"
 
 SOCKET_PATH = '127.0.0.1:'
 DEFAULT_PORT = 47367
@@ -62,28 +63,13 @@ class RsenseApp < Sinatra::Base
   set :port, PORT
 
   def setup(jsondata)
-    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/
-      changed = check_options(jsondata)
-      return if changed && changed.empty?
+    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand
+      PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand.options = PROJMAN.roptions
     else
       PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand = Rsense::Server::Command::Command.new(PROJMAN.roptions)
     end
-  end
-
-  def check_options(data)
-    changed = []
-    data.each do |k, v|
-      if PROJMAN.roptions.respond_to? k.to_sym
-        keyval = PROJMAN.roptions.send k.to_sym
-        unless keyval.to_s =~ /#{v}/
-          PROJMAN.roptions.__send__("#{k}=", v)
-          changed << k
-        end
-      end
-    end
-    changed
   end
 
   def code_completion
