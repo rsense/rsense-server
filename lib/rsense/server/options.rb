@@ -23,6 +23,10 @@ module Rsense
         end
       end
 
+      def project
+        @project_path
+      end
+
       def project=(path)
         @project_path = Pathname.new(path).expand_path
       end

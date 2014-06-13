@@ -2,7 +2,7 @@
     "command": "code_completion",
     "project": "spec/fixtures/test_gem",
     "file": "spec/fixtures/test_gem/lib/sample.rb",
-    "code": "require \"sample/version\"\n\nmodule Sample\n  attr_accessor :simple\n\n  def initialize\n    @simple = \"simple\"\n  end\n\n  def another\n    \"another\"\n  end\nend\n\nsample = Sample.new\nsample\n",
+    "code": "require \"sample/version\"\n\nmodule Sample\n  class Sample\n    attr_accessor :simple\n\n    def initialize\n      @simple = \"simple\"\n    end\n\n    def another\n      \"another\"\n    end\n  end\nend\n\nsample = Sample::Sample.new\nsample",
     "location": {
         "row": 18,
         "column": 7

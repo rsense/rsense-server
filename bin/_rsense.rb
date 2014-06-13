@@ -45,6 +45,12 @@ end
 
 PORT = port(options)
 
+class ProjectManager
+  attr_accessor :roptions, :rcommand, :rproject
+end
+
+PROJMAN = ProjectManager.new
+
 require "puma"
 require "sinatra"
 require "json"
@@ -56,33 +62,37 @@ class RsenseApp < Sinatra::Base
   set :port, PORT
 
   def setup(jsondata)
-    if @roptions && @roptions.project_path =~ /#{jsondata["project"]}/
+    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/
       changed = check_options(jsondata)
-      @rcommand.options = @roptions
+      return if changed && changed.empty?
+      PROJMAN.rcommand.options = PROJMAN.roptions
     else
-      @roptions = Rsense::Server::Options.new(jsondata)
-      @rcommand = Rsense::Server::Command::Command.new(@roptions)
+      PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
+      PROJMAN.rcommand = Rsense::Server::Command::Command.new(PROJMAN.roptions)
     end
   end
 
   def check_options(data)
     changed = []
     data.each do |k, v|
-      unless @roptions.send k.to_sym == v
-        @roptions.__send__("#{k}=", v)
-        changed << k
+      if PROJMAN.roptions.respond_to? k.to_sym
+        keyval = PROJMAN.roptions.send k.to_sym
+        unless keyval.to_s =~ /#{v}/
+          PROJMAN.roptions.__send__("#{k}=", v)
+          changed << k
+        end
       end
     end
     changed
   end
 
   def code_completion
-    if @roptions.code
-      candidates = @rcommand.code_completion(@roptions.file, @roptions.location, @roptions.code)
+    if PROJMAN.roptions.code
+      candidates = PROJMAN.rcommand.code_completion(PROJMAN.roptions.file, PROJMAN.roptions.location, PROJMAN.roptions.code)
     else
-      candidates = @rcommand.code_completion(@roptions.file, @roptions.location)
+      candidates = PROJMAN.rcommand.code_completion(PROJMAN.roptions.file, PROJMAN.roptions.location)
     end
-    @rcommand.errors.each { |e| puts e }
+    PROJMAN.rcommand.errors.each { |e| puts e }
     completions = candidates.map do |c|
       {
         name: c.completion,
@@ -95,20 +105,16 @@ class RsenseApp < Sinatra::Base
   end
 
   def add_deps
-    while true
-      unless @serving
-        if @rcommand.placeholders.first
-          proj, feat, encoding = @rcommand.placeholders.shift
-          @rcommand.rrequire(proj, feat, encoding, 0)
-          sleep 1
-        end
+    Thread.new do
+      if PROJMAN.rcommand.placeholders.first
+        proj, feat = PROJMAN.rcommand.placeholders.shift
+        PROJMAN.rcommand.rrequire(proj, feat, true, 0)
       end
     end
   end
 
   post '/' do
     @serving = true
-    add_deps
     content_type :json
     jsontext = request.body.read
     if jsontext
@@ -118,6 +124,7 @@ class RsenseApp < Sinatra::Base
     else
       retdata = "No JSON was sent"
     end
+    add_deps
     @serving = false
     retdata
   end

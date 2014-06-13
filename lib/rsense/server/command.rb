@@ -1,9 +1,13 @@
 require "pathname"
+require "pry"
 require "rsense-core"
 require_relative "./listeners/find_definition_event_listener"
 require_relative "./listeners/where_event_listener"
 require_relative "./command/special_meth"
 require_relative "./command/type_inference_method"
+require_relative "./command/native_attr_method"
+require_relative "./command/alias_native_method"
+require_relative "./command/rsense_method"
 
 module Rsense
   module Server
@@ -14,6 +18,11 @@ module Rsense
         @main = false
         @feature = nil
         @loadPathLevel = 0
+      end
+
+      def clean_typeSet
+        @typeSet = nil
+        @typeSet = Java::org.cx4a.rsense.typing::TypeSet.new
       end
     }
     module Command
@@ -33,7 +42,7 @@ class Rsense::Server::Command::Command
       :kind
     )
 
-  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph, :project, :errors, :placeholders
+  attr_accessor :context, :options, :parser, :projects, :sandbox, :definitionFinder, :whereListener, :type_inference_method, :require_method, :require_next_method, :result, :graph, :project, :errors, :placeholders, :require_relative_method, :ast
 
   def initialize(options)
     @context = Rsense::Server::Context.new
@@ -48,16 +57,32 @@ class Rsense::Server::Command::Command
       if args
         feature = Java::org.cx4a.rsense.typing.vertex::Vertex.getString(args[0])
         if feature
-          rrequire(@context.project, feature, "UTF-8", @context.loadPathLevel + 1)
+          rrequire(@context.project, feature, false, @context.loadPathLevel + 1)
+        end
+      end
+    end
+
+    @require_relative_method = Rsense::Server::Command::SpecialMeth.new() do |runtime, receivers, args, blcck, result|
+      if args
+        feature = Java::org.cx4a.rsense.typing.vertex::Vertex.getString(args[0])
+        if feature
+          files = Dir.glob(Pathname.new(args.first.node.position.file).dirname.join("#{feature}*"))
+          files.each do |f|
+            rload(project, f, "UTF-8", false)
+          end
         end
       end
     end
 
     @require_next_method = Rsense::Server::Command::SpecialMeth.new() do |runtime, receivers, args, blcck, result|
       if @context.feature
-        rrequire(@context.project, @context.feature, "UTF-8", @context.loadPathLevel + 1)
+        rrequire(@context.project, @context.feature, false, @context.loadPathLevel + 1)
       end
     end
+
+    @native_attr_method = Rsense::Server::Command::NativeAttrMethod.new()
+
+    @alias_native_method = Rsense::Server::Command::AliasNativeMethod.new()
 
     clear()
   end
@@ -76,34 +101,44 @@ class Rsense::Server::Command::Command
     end
 
     begin
-      ast = @parser.parse_string(file.read, file.to_s)
-      project.graph.load(ast)
+      @ast = @parser.parse_string(file.read, file.to_s)
+      project.graph.load(@ast)
       result = LoadResult.new
-      result.setAST(ast)
+      result.setAST(@ast)
       result
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
       @errors << e
     end
   end
 
-  def rrequire(project, feature, encoding, loadPathLevel=0)
+  def rrequire(project, feature, background, loadPathLevel=0)
+    puts feature
+    encoding = "UTF-8"
 
     lplevel = @context.loadPathLevel
     @context.loadPathLevel = loadPathLevel
-    if lplevel > 1
-      @placeholders << [project, feature, encoding]
+    if lplevel > 1 && background == false
+      return @placeholders << [project, feature]
     end
     return LoadResult.alreadyLoaded() if project.loaded?(feature)
 
+    if PROJMAN && PROJMAN.roptions && PROJMAN.roptions.project_path
+      project_matches = Dir.glob(Pathname.new(PROJMAN.roptions.project_path).join("**/#{feature}*"))
+      if project_matches
+        project_matches.each do |p|
+          return rload(project, p, "UTF-8", false)
+        end
+      end
+    end
 
     stubs = stub_matches(project, feature)
     stubs.each do |stub|
-      rload(project, Pathname.new(stub), encoding, false)
+      return rload(project, Pathname.new(stub), encoding, false)
     end
 
     lpmatches = load_path_matches(project, feature)
     lpmatches.each do |lp|
-      rload(project, lp, encoding, false)
+      return rload(project, lp, encoding, false)
     end
 
     unless lpmatches
@@ -169,6 +204,7 @@ class Rsense::Server::Command::Command
   end
 
   def code_completion(file, location, code_str="")
+    prepare(@project)
     if code_str.empty?
       code = Rsense::Server::Code.new(Pathname.new(file).read)
     else
@@ -177,10 +213,10 @@ class Rsense::Server::Command::Command
 
     begin
       source = code.inject_inference_marker(location)
-      ast = @parser.parse_string(source, file.to_s)
-      @project.graph.load(ast)
+      @ast = @parser.parse_string(source, file.to_s)
+      @project.graph.load(@ast)
       result = Java::org.cx4a.rsense::CodeCompletionResult.new
-      result.setAST(ast)
+      result.setAST(@ast)
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
       @errors << e
     end
@@ -229,9 +265,13 @@ class Rsense::Server::Command::Command
     @context.main = true
     @type_inference_method.context = @context
     @graph = project.graph
+    @native_attr_method.graph = graph
     @graph.addSpecialMethod(Rsense::Server::Command::TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
     @graph.addSpecialMethod("require", @require_method)
     @graph.addSpecialMethod("require_next", @require_next_method)
+    @graph.addSpecialMethod("require_relative", @require_relative_method)
+    @graph.addSpecialMethod("native_accessor", @native_attr_method)
+    @graph.addSpecialMethod("alias_native", @alias_native_method)
     load_builtin(project)
   end
 
@@ -254,7 +294,6 @@ class Rsense::Server::Command::Command
     end
     file = @options.project_path
     @project = Rsense::Server::Project.new(name, file)
-    prepare(@project)
   end
 
 end
