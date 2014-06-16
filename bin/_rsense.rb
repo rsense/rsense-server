@@ -94,6 +94,8 @@ class RsenseApp < Sinatra::Base
     Thread.new do
       if PROJMAN.rcommand.placeholders.first
         proj, feat = PROJMAN.rcommand.placeholders.shift
+        puts "Add deps: "
+        puts feat
         PROJMAN.rcommand.rrequire(proj, feat, true, 0)
       end
     end

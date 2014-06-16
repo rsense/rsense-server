@@ -1,5 +1,6 @@
 require "pathname"
 require "rsense-core"
+require "pry"
 require_relative "./listeners/find_definition_event_listener"
 require_relative "./listeners/where_event_listener"
 require_relative "./command/special_meth"
@@ -67,7 +68,10 @@ class Rsense::Server::Command::Command
         if feature
           files = Dir.glob(Pathname.new(args.first.node.position.file).dirname.join("#{feature}*"))
           files.each do |f|
-            rload(project, f, "UTF-8", false)
+            pth = Pathname.new(f).expand_path
+            if pth.file?
+              rload(project, f, "UTF-8", false)
+            end
           end
         end
       end
@@ -88,9 +92,13 @@ class Rsense::Server::Command::Command
 
   def rload(project, file, encoding, prep)
     file = Pathname.new(file)
+    feature = file.basename.to_s.sub(file.extname, "")
     return LoadResult.alreadyLoaded() if project.loaded?(file)
-    return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
+    return LoadResult.alreadyLoaded() if project.loaded?(feature)
+    return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.jar|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
+    project.loaded << feature
     project.loaded << file
+
     oldmain = @context.main
 
     if prep
@@ -99,8 +107,11 @@ class Rsense::Server::Command::Command
       @context.main = false
     end
 
+    source = file.read
+    return unless check_shebang(source)
+
     begin
-      @ast = @parser.parse_string(file.read, file.to_s)
+      @ast = @parser.parse_string(source, file.to_s)
       project.graph.load(@ast)
       result = LoadResult.new
       result.setAST(@ast)
@@ -110,15 +121,21 @@ class Rsense::Server::Command::Command
     end
   end
 
+  def check_shebang(source)
+    return true unless source.match(/^#!/)
+    source.match(/^(#!)(\/\w+)*\/ruby/)
+  end
+
   def rrequire(project, feature, background, loadPathLevel=0)
-    puts feature
+
     encoding = "UTF-8"
 
     lplevel = @context.loadPathLevel
     @context.loadPathLevel = loadPathLevel
-    if lplevel > 1 && background == false
+    if lplevel > 2 && background == false
       return @placeholders << [project, feature]
     end
+
     return LoadResult.alreadyLoaded() if project.loaded?(feature)
 
     if PROJMAN && PROJMAN.roptions && PROJMAN.roptions.project_path
@@ -157,12 +174,14 @@ class Rsense::Server::Command::Command
         rload(project, cp, encoding, false)
       end
     end
-    @context.loadPathLevel = lplevel
   end
 
   def load_builtin(project)
     builtin = builtin_path(project)
     rload(project, builtin, "UTF-8", false)
+    project.stubs.each do |p|
+      rload(project, Pathname.new(p), "UTF-8", false)
+    end
   end
 
   def builtin_path(project)
@@ -222,6 +241,7 @@ class Rsense::Server::Command::Command
 
     candidates = []
     @receivers = []
+
     @context.typeSet.each do |receiver|
       @receivers << receiver
       ruby_class = receiver.getMetaClass

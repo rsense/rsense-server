@@ -32,7 +32,12 @@ module Rsense
       end
 
       def file=(path)
-        @file = Pathname.new(path).expand_path
+        file = Pathname.new(path.to_s).expand_path
+        if file.exist?
+          @file = file
+        else
+          @file = Pathname.new(".")
+        end
       end
 
       def here_doc_reader(reader)
@@ -86,4 +91,3 @@ module Rsense
     end
   end
 end
-
