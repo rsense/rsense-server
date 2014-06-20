@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require "rsense/server"
 require "rsense/server/config"
 require "optparse"
@@ -63,7 +65,7 @@ class RsenseApp < Sinatra::Base
   set :port, PORT
 
   def setup(jsondata)
-    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand
+    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand && PROJMAN.roptions.file.to_s =~ /#{jsondata["file"]}/
       PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand.options = PROJMAN.roptions
     else

@@ -180,7 +180,7 @@ class Rsense::Server::Command::Command
     builtin = builtin_path(project)
     rload(project, builtin, "UTF-8", false)
     project.stubs.each do |p|
-      rload(project, Pathname.new(p), "UTF-8", false)
+      rload(project, Pathname.new(p), "UTF-8", false) unless p.match(/builtin/)
     end
   end
 
@@ -284,7 +284,7 @@ class Rsense::Server::Command::Command
     @context.main = true
     @type_inference_method.context = @context
     @graph = project.graph
-    @native_attr_method.graph = graph
+    @native_attr_method.graph = @graph
     @graph.addSpecialMethod(Rsense::Server::Command::TYPE_INFERENCE_METHOD_NAME, @type_inference_method)
     @graph.addSpecialMethod("require", @require_method)
     @graph.addSpecialMethod("require_next", @require_next_method)

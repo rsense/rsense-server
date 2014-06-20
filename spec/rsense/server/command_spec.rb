@@ -3,11 +3,6 @@ require "json"
 require_relative "../../spec_helper.rb"
 
 describe Rsense::Server::Command::Command do
-  class ProjectManager
-    attr_accessor :roptions, :rcommand, :rproject
-  end
-
-  PROJMAN = ProjectManager.new
 
   before do
     @json_path = Pathname.new("spec/fixtures/sample.json")

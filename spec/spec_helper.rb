@@ -14,3 +14,9 @@ require_relative "../lib/rsense/server/path_info.rb"
 require_relative "../lib/rsense/server/command/special_meth.rb"
 require_relative "../lib/rsense/server/project.rb"
 require_relative "../lib/rsense/server/config.rb"
+
+class ProjectManager
+  attr_accessor :roptions, :rcommand, :rproject
+end
+
+PROJMAN = ProjectManager.new
