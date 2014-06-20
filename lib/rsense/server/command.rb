@@ -1,6 +1,5 @@
 require "pathname"
 require "rsense-core"
-require "pry"
 require_relative "./listeners/find_definition_event_listener"
 require_relative "./listeners/where_event_listener"
 require_relative "./command/special_meth"

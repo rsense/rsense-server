@@ -3,7 +3,6 @@
 require "rsense/server"
 require "rsense/server/config"
 require "optparse"
-require "awesome_print"
 
 SOCKET_PATH = '127.0.0.1:'
 DEFAULT_PORT = 47367
