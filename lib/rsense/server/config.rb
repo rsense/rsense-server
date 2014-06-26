@@ -38,6 +38,8 @@ class Rsense::Server::Config
       json_str = JSON.parse(config_path.read)
     rescue JSON::ParserError => e
       @errors << e
+    rescue Errno::ENOENT => e
+      @errors << e
     end
     if json_str
       @options ||= Rsense::Server::Options.new(json_str)
