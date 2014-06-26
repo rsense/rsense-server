@@ -2,6 +2,7 @@
 
 require "rsense/server"
 require "rsense/server/config"
+require "rsense/server/command/preload"
 require "optparse"
 
 SOCKET_PATH = '127.0.0.1:'
@@ -51,7 +52,14 @@ class ProjectManager
   attr_accessor :roptions, :rcommand, :rproject
 end
 
+def projman_set_up(projman, options)
+  options[:path] ||= "."
+  path = Pathname.new(options[:path]).expand_path
+  Rsense::Server::Command::Preload.load(projman, path)
+end
+
 PROJMAN = ProjectManager.new
+projman_set_up(PROJMAN, options)
 
 require "puma"
 require "sinatra"

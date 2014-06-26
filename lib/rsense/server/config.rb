@@ -16,14 +16,18 @@ class Rsense::Server::Config
     @errors = []
   end
 
-  def search(path_str="~")
+  def search(path_str="~", level=0)
+    level = level + 1
     path = FileTree.new(path_str)
     return if @searched.include?(path)
     @searched << path
     conf = path.join(".rsense").expand_path
     unless conf.exist?
-      unless path.parent == path
-        conf = search(path.parent)
+      if path.parent == path || level == 3
+        contender = Pathname.new("~").join(".rsense").expand_path
+        conf = contender if contender.exist?
+      else
+        conf = search(path.parent, level)
       end
     end
     conf
