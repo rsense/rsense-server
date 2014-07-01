@@ -71,6 +71,4 @@ class Rsense::Server::Config
       options(conf)
     end
   end
-
-
 end

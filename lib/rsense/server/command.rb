@@ -105,6 +105,7 @@ class Rsense::Server::Command::Command
     else
       @context.main = false
     end
+    return if file.directory?
 
     source = file.read
     return unless check_shebang(source)

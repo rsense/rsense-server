@@ -4,14 +4,7 @@ module Rsense
       module Preload
 
         def stub_data(path)
-          filepath = path.join("/lib/code.rb")
-          {
-            "command"=>"code_completion",
-            "project" => path.to_s,
-            "file" =>  filepath.to_s,
-            "code" => "def check(testarg)\n  testarg\nend\ncheck('hello')",
-            "location" => { "row" => 2, "column" => 10 }
-          }
+          { "project" => path.to_s }
         end
         module_function :stub_data
 

@@ -1,3 +1,5 @@
+require_relative "./command/graph"
+
 module Rsense
   module Server
     class Project
@@ -6,7 +8,7 @@ module Rsense
       def initialize(name, path)
         @name = name
         @path = path
-        @graph = Rsense::Typing::Graph.new
+        @graph = Rsense::Server::Command::Graph.new
         @runtime = @graph.getRuntime()
         @stubs = Dir.glob(Rsense::BUILTIN.join("**/*.rb"))
         @load_path = Rsense::Server::LoadPath.paths

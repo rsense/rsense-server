@@ -72,13 +72,17 @@ class RsenseApp < Sinatra::Base
   set :port, PORT
 
   def setup(jsondata)
-    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand && PROJMAN.roptions.file.to_s =~ /#{jsondata["file"]}/
+    if project_check?(jsondata)
       PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand.options = PROJMAN.roptions
     else
       PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand = Rsense::Server::Command::Command.new(PROJMAN.roptions)
     end
+  end
+
+  def project_check?(jsondata)
+    PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand && PROJMAN.roptions.file && PROJMAN.roptions.file.to_s =~ /#{jsondata["file"]}/
   end
 
   def code_completion
