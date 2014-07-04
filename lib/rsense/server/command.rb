@@ -341,7 +341,6 @@ class Rsense::Server::Command::Command
     codes.each do |c|
       load_gem(@project, c)
     end
-    puts codes
   end
 
 end
