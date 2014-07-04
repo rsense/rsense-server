@@ -7,6 +7,7 @@ require_relative "./command/type_inference_method"
 require_relative "./command/native_attr_method"
 require_relative "./command/alias_native_method"
 require_relative "./command/rsense_method"
+require_relative "./command/preload"
 
 module Rsense
   module Server
@@ -95,7 +96,7 @@ class Rsense::Server::Command::Command
     return LoadResult.alreadyLoaded() if project.loaded?(file)
     return LoadResult.alreadyLoaded() if project.loaded?(feature)
     return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.jar|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
-    project.loaded << feature
+
     project.loaded << file
 
     oldmain = @context.main
@@ -118,6 +119,21 @@ class Rsense::Server::Command::Command
       result
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
       @errors << e
+    end
+  end
+
+  def load_gem(project, source)
+    begin
+      @ast = @parser.parse_string(source.source, source.name)
+      project.graph.load(@ast)
+      result = LoadResult.new
+      result.setAST(@ast)
+      result
+    rescue Java::OrgJrubyparserLexer::SyntaxException => e
+      @errors << e
+    rescue Java::JavaLang::NullPointerException => e
+      @errors << e
+      puts "NullPointerException"
     end
   end
 
@@ -305,6 +321,12 @@ class Rsense::Server::Command::Command
     prepare_project()
   end
 
+  def set_features_loaded(deps)
+    deps.each do |d|
+      @project.loaded << d.name
+    end
+  end
+
   def prepare_project()
     if @options.name
       name = @roptions.name
@@ -313,6 +335,13 @@ class Rsense::Server::Command::Command
     end
     file = @options.project_path
     @project = Rsense::Server::Project.new(name, file)
+    prepare(project)
+    set_features_loaded(@project.dependencies)
+    codes = Rsense::Server::Command::Preload.dependency_code(@project.dependencies)
+    codes.each do |c|
+      load_gem(@project, c)
+    end
+    puts codes
   end
 
 end

@@ -14,16 +14,12 @@ class Rsense::Server::Command::Graph < Java::org.cx4a.rsense.typing::Graph
     super
   end
 
-  def visitLocalVarNode(node)
-    holder = self.runtime.getContext().getCurrentScope().getValue(node.getName())
-    if node.name.match(/block/)
-      binding.pry
-    end
+  def visitMultipleAsgnNode(node)
+    Java::org.cx4a.rsense.typing.runtime::RuntimeHelper.multipleAssign(self, node)
+  end
 
-    if holder
-      holder.getVertex()
-    else
-      Java::org.cx4a.rsense.typing.vertex::Vertex::EMPTY
-    end
+  def addEdgeAndPropagate(src, dest)
+    src.addEdge(dest)
+    propagate(src, dest)
   end
 end

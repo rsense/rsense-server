@@ -22,9 +22,10 @@ module Rsense
           start_dir = Dir.pwd
           Dir.chdir(@gemfile.dirname)
           lockfile = Bundler::LockfileParser.new(Bundler.read_file(@gemfile))
-          gem_info(lockfile)
+          @deps = gem_info(lockfile)
           Dir.chdir(start_dir)
         end
+        @deps
       end
 
       def gem_info(lfile)
