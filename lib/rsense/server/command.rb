@@ -114,10 +114,10 @@ class Rsense::Server::Command::Command
     begin
       @ast = @parser.parse_string(source, file.to_s)
       project.graph.load(@ast)
-      result = LoadResult.new
-      result.setAST(@ast)
-      result
+
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
+      @errors << e
+    rescue Java::JavaUtil::ConcurrentModificationException => e
       @errors << e
     end
   end
@@ -126,14 +126,12 @@ class Rsense::Server::Command::Command
     begin
       @ast = @parser.parse_string(source.source, source.name)
       project.graph.load(@ast)
-      result = LoadResult.new
-      result.setAST(@ast)
-      result
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
       @errors << e
     rescue Java::JavaLang::NullPointerException => e
       @errors << e
-      puts "NullPointerException"
+    rescue Java::JavaUtil::ConcurrentModificationException => e
+        @errors << e
     end
   end
 
@@ -249,8 +247,8 @@ class Rsense::Server::Command::Command
       source = code.inject_inference_marker(location)
       @ast = @parser.parse_string(source, file.to_s)
       @project.graph.load(@ast)
-      result = Java::org.cx4a.rsense::CodeCompletionResult.new
-      result.setAST(@ast)
+      # result = Java::org.cx4a.rsense::CodeCompletionResult.new
+      # result.setAST(@ast)
     rescue Java::OrgJrubyparserLexer::SyntaxException => e
       @errors << e
     end
@@ -329,7 +327,7 @@ class Rsense::Server::Command::Command
 
   def prepare_project()
     if @options.name
-      name = @roptions.name
+      name = @options.name
     else
       name = "(sandbox)"
     end

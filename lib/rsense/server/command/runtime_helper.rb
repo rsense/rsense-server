@@ -8,16 +8,23 @@ module Rsense
   end
 end
 
-class Java::org.cx4a.rsense.typing.runtime::RuntimeHelper
+class Rsense::Server::Command::RuntimeHelper < Java::org.cx4a.rsense.typing.runtime::RuntimeHelper
 
-  def multipleAssign(graph, node, src)
-    unless src
-      src = graph.createVertex(node.getValue())
+  def self.getNamespace(graph, node)
+    if node.class.to_s.match(/Colon2ConstNode/)
+      left = graph.createVertex((node).getLeftNode())
+      object = left.singleType()
+      if object && object.java_object.java_kind_of?(Java::org.cx4a.rsense.ruby::RubyModule)
+        return object
+      else
+        return nil
+      end
+    else
+      super
     end
-
-    vertex = MultipleAsgnVertex.new(node, src)
-    graph.addEdgeAndPropagate(src, vertex)
-    src
   end
 
+  def self.get_namespace(graph, node)
+    self.getNamespace(graph, node)
+  end
 end

@@ -1,3 +1,6 @@
+require_relative "./command/graph"
+require_relative "./command/runtime_helper"
+require "rsense-core"
 
 module Rsense
   module Server
@@ -7,8 +10,8 @@ module Rsense
       def initialize(name, path)
         @name = name
         @path = path
-        @graph = Java::org.cx4a.rsense.typing::Graph.new
-        # @graph = Rsense::Server::Command::Graph.new
+        #@graph = Java::org.cx4a.rsense.typing::Graph.new
+        @graph = Rsense::Server::Command::Graph.new
         @runtime = @graph.getRuntime()
         @stubs = Dir.glob(Rsense::BUILTIN.join("**/*.rb"))
         @load_path = Rsense::Server::LoadPath.paths
