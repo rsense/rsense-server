@@ -19,6 +19,10 @@ OptionParser.new do |opts|
   opts.on("-p", "--port PORT", "Port") do |port|
     options[:port] = port
   end
+
+  opts.on("-d", "--debug", "Debug") do |debug|
+    options[:debug] = true
+  end
 end.parse!
 
 def config(options)
@@ -49,11 +53,20 @@ end
 PORT = port(options)
 
 class ProjectManager
-  attr_accessor :roptions, :rcommand, :rproject
+  attr_accessor :roptions, :rcommand, :rproject, :debug
+
+  def debug?
+    @debug
+  end
 end
 
 def projman_set_up(projman, options)
   options[:path] ||= "."
+  if options[:debug]
+    projman.debug = true
+  else
+    projman.debug = false
+  end
   path = Pathname.new(options[:path]).expand_path
   Rsense::Server::Command::Preload.load(projman, path)
 end
@@ -72,7 +85,7 @@ class RsenseApp < Sinatra::Base
   set :port, PORT
 
   def setup(jsondata)
-    if PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand && PROJMAN.roptions.file.to_s =~ /#{jsondata["file"]}/
+    if project_check?(jsondata)
       PROJMAN.roptions = Rsense::Server::Options.new(jsondata)
       PROJMAN.rcommand.options = PROJMAN.roptions
     else
@@ -81,13 +94,21 @@ class RsenseApp < Sinatra::Base
     end
   end
 
+  def project_check?(jsondata)
+    PROJMAN.roptions && PROJMAN.roptions.project_path.to_s =~ /#{jsondata["project"]}/ && PROJMAN.rcommand && PROJMAN.roptions.file && PROJMAN.roptions.file.to_s =~ /#{jsondata["file"]}/
+  end
+
   def code_completion
     if PROJMAN.roptions.code
       candidates = PROJMAN.rcommand.code_completion(PROJMAN.roptions.file, PROJMAN.roptions.location, PROJMAN.roptions.code)
     else
       candidates = PROJMAN.rcommand.code_completion(PROJMAN.roptions.file, PROJMAN.roptions.location)
     end
-    PROJMAN.rcommand.errors.each { |e| puts e }
+
+    if PROJMAN.debug?
+      PROJMAN.rcommand.errors.each { |e| puts e }
+    end
+
     completions = candidates.map do |c|
       {
         name: c.completion,
