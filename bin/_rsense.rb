@@ -68,7 +68,7 @@ def projman_set_up(projman, options)
     projman.debug = false
   end
   path = Pathname.new(options[:path]).expand_path
-  Rsense::Server::Command::Preload.load(projman, path, debug)
+  Rsense::Server::Command::Preload.load(projman, path)
 end
 
 PROJMAN = ProjectManager.new

@@ -68,7 +68,6 @@ OptionParser.new do |opts|
     options[:location] = { row: (row.to_i + 1), column: (col.to_i + 1) }
   end
 end.parse!
-puts options
 
 begin
 
