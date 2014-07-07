@@ -2,33 +2,32 @@
 
 require 'optparse'
 require 'json'
-require 'net/http'
+require "faraday"
+require "uri"
 
 module Rsense
   class Request
-    SOCKET_PATH = 'http://localhost'
+    SOCKET_PATH = 'localhost'
     DEFAULT_PORT = 47367
 
     def self.req(jsondata)
-      request = Net::HTTP::Post.new uri
-      request.body = jsondata
+      conn = Faraday.new(uri)
 
-      Net::HTTP.start(uri.host, uri.port) do |http|
-        http.request request
+      conn.post do |req|
+         req.headers["Content-Type"] = 'application.json'
+         req.body = jsondata
       end
     end
 
     def self.uri
-      uri = URI(SOCKET_PATH)
-      uri.port = DEFAULT_PORT
-      uri
+      uri = URI::HTTP.build({host: SOCKET_PATH, port: DEFAULT_PORT})
     end
   end
 
   class Main
     def self.run(jsondata)
-      req_body = request(jsondata).body
-      completions_hash = JSON.parse(req_body)
+      res_body = request(jsondata).body
+      completions_hash = JSON.parse(res_body)
       self.stringify(completions_hash)
     end
 
