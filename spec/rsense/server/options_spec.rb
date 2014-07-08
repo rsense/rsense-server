@@ -14,7 +14,7 @@ describe Rsense::Server::Options do
   end
 
   it "has a project path" do
-    @options.project_path.to_s.must_match(/code/)
+    @options.project_path.to_s.must_match(/lib\/rsense/)
     @options.project_path.class.must_equal(Pathname)
   end
 
@@ -28,6 +28,6 @@ describe Rsense::Server::Options do
   end
 
   it "has a file" do
-    @options.file.to_s.must_match(/rsense\.rb/)
+    @options.file.to_s.must_match(/server\.rb/)
   end
 end
