@@ -75,7 +75,7 @@ PROJMAN = ProjectManager.new
 projman_set_up(PROJMAN, options)
 
 require "puma"
-require "sinatra"
+require "sinatra/base"
 require "json"
 
 class RsenseApp < Sinatra::Base
@@ -147,12 +147,6 @@ class RsenseApp < Sinatra::Base
     retdata
   end
 
-end
-
-# termination signal
-Signal.trap("TERM") do
-  puts "TERM signal received."
-  RsenseApp.stop!
 end
 
 RsenseApp.run!
