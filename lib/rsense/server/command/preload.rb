@@ -15,6 +15,7 @@ module Rsense
 
         def self.dependency_code(dependencies)
           paths = dependencies.map { |d| gen_source(d) }.compact!
+          return [] unless paths
           lib_dirs(paths)
           code(paths)
           paths.each { |l| concat_files(l) }
