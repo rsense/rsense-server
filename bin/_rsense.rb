@@ -34,7 +34,8 @@ def config(options)
   if path && path.exist?
     conf.set_up(path)
   else
-    conf.set_up(Pathname.new("~").expand_path)
+    options[:path] = Pathname.new("~").expand_path
+    conf.set_up(options[:path])
   end
   conf
 end
