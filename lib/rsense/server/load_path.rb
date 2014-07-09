@@ -17,6 +17,7 @@ module Rsense
       end
 
       def dependencies(project)
+        @deps = []
         @gemfile = find_gemfile(project)
         if @gemfile
           start_dir = Dir.pwd

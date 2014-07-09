@@ -27,14 +27,14 @@ end.parse!
 
 def config(options)
   if options[:path]
-    path = Pathname.new(options[:path]).expand_path
+    options[:path] = path = Pathname.new(options[:path]).expand_path
   end
   conf = Rsense::Server::Config.new
 
   if path && path.exist?
     conf.set_up(path)
   else
-    options[:path] = Pathname.new("~").expand_path
+    options[:path] = Pathname.new(Dir.pwd).expand_path
     conf.set_up(options[:path])
   end
   conf
