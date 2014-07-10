@@ -122,7 +122,8 @@ class Rsense::Server::Command::Command
     end
   end
 
-  def load_gem(project, source)
+  def load_gem(project, source, index)
+    return if index > 15
     begin
       @ast = @parser.parse_string(source.source, source.name)
       project.graph.load(@ast)
@@ -336,8 +337,8 @@ class Rsense::Server::Command::Command
     prepare(project)
     set_features_loaded(@project.dependencies)
     codes = Rsense::Server::Command::Preload.dependency_code(@project.dependencies)
-    codes.each do |c|
-      load_gem(@project, c)
+    codes.each_with_index do |c, i|
+      load_gem(@project, c, i)
     end
   end
 
