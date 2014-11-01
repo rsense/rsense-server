@@ -132,7 +132,7 @@ class Rsense::Server::Command::Command
     rescue Java::JavaLang::NullPointerException => e
       @errors << e
     rescue Java::JavaUtil::ConcurrentModificationException => e
-        @errors << e
+      @errors << e
     end
   end
 
