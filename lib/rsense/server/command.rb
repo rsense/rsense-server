@@ -35,6 +35,13 @@ end
 
 class Rsense::Server::Command::Command
   LoadResult = Java::org.cx4a.rsense::LoadResult
+
+  RUBY_FILE_EXTENSIONS = %w(.rb .rake .gemspec .ru .thor .rabl .jbuilder .podspec)
+
+  RUBY_FILE_NAMES = %w(Podfile Rakefile Vagrantfile Puppetfile Berksfile Appraisals Gemfile Guardfile Capfile Thorfile)
+
+  WHITELIST = RUBY_FILE_EXTENSIONS + RUBY_FILE_NAMES
+
   CompletionCandidate = Struct.new(
       :completion,
       :qualified_name,
@@ -95,7 +102,7 @@ class Rsense::Server::Command::Command
     feature = file.basename.to_s.sub(file.extname, "")
     return LoadResult.alreadyLoaded() if project.loaded?(file)
     return LoadResult.alreadyLoaded() if project.loaded?(feature)
-    return if file.extname =~ /(\.so|\.dylib|\.dll|\.java|\.class|\.jar|\.c$|\.h$|\.m$|\.js|\.html|\.css)/
+    return unless WHITELIST.any? { |ext| file.to_s.end_with?(ext) }
 
     project.loaded << file
 
