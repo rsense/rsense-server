@@ -22,7 +22,7 @@ describe "completions" do
     it "returns completions" do
       @script = TestMockscript.new
       compls = @script.code_complete
-      compls.size.must_equal(66)
+      compls.size.must_equal(62)
     end
 
 end
